@@ -4,10 +4,10 @@ import numpy as np
 from skimage.exposure import rescale_intensity
 
 image = cv2.imread('Images/blurry_plate.jpg', 0)
-
+def get_threshold(img):
+    return cv2.threshold(img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
 # works for 1,2,5
 image = cv2.resize(image, (325, 325))
-
 
 # # Noise removal with iterative bilateral filter(removes noise while preserving edges)
 gray = cv2.bilateralFilter(image, 11, 17, 17)
@@ -66,15 +66,19 @@ cv2.waitKey(0)
 cv2.destroyAllWindows()
  
 # increase plate size:
-large_plate = cv2.resize(crop_img, (0,0), fx=3, fy=3) 
+large_plate = cv2.resize(crop_img, (0,0), fx=3, fy=3,interpolation=cv2.INTER_CUBIC)
 
 # sharpen cropped image
 kernel = np.array([[-1,-1,-1], [-1,9,-1], [-1,-1,-1]])
 
 # Apply kernel to image 
-sharpened_image = cv2.filter2D(large_plate, -1, kernel)
+blurred = cv2.GaussianBlur(large_plate, (5, 5), 0)
 
-cv2.imshow("sharpened plate", sharpened_image)
+sharpened_image = cv2.filter2D(blurred, -1, kernel)
+img = get_threshold(sharpened_image)
+
+cv2.imshow("Blurred_image", img)
+# cv2.imshow("sharpened plate", sharpened_image)
 
 cv2.waitKey(0)
 cv2.destroyAllWindows()
