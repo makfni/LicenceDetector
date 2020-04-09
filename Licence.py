@@ -18,7 +18,7 @@ from skimage.exposure import rescale_intensity
 #plate 1 cropping only works when resized
 #plate 8 works but the edges are very faded
 
-file = 'Images/plate1.jpg'
+file = 'Images/plate0.jpg'
 
 img = cv2.imread(file)
 img = cv2.resize(img, (620, 480))
@@ -123,8 +123,9 @@ def _license_plate_detector(img0, sigma):
     else:
         detected = 1
 
-    if detected == 1:
-        cv2.drawContours(img, [LPCnt], -1, (0, 255, 0), 3)
+    # if detected == 1:
+    #     continue
+        # cv2.drawContours(img, [LPCnt], -1, (255, 255, 255), 3)
 
     # based on the contour that was found, we return
     # the 4 extreme point (vertex) coordinates (x,y)
@@ -133,7 +134,7 @@ def _license_plate_detector(img0, sigma):
     for p in vtx:
         pt = (p[0], p[1])
         print(pt)
-        cv2.circle(img, pt, 5, (200, 0, 0), 2)
+        # cv2.circle(img, pt, 5, (200, 0, 0), 2)
 
     cv2.imshow('License Plate', img)
     cv2.waitKey(0)
@@ -157,26 +158,58 @@ def _license_plate_detector(img0, sigma):
     crop_img = img[topLeft_y:topLeft_y + plate_height, bottomLeft_x:bottomLeft_x + plate_width]
     cv2.imshow("Cropped License Plate", crop_img)
 
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    # gray_scale_crop_img = cv2.cvtColor(crop_img, cv2.COLOR_BGR2GRAY)
+    cv2.imwrite("license_plate.jpg", crop_img)
+    cv2.imshow("sharpened plate", crop_img)
 
-    # increase plate size:
-    large_plate = cv2.resize(crop_img, (0, 0), fx=3, fy=3, interpolation=cv2.INTER_CUBIC)
-
-    # sharpen cropped image
-    kernel = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
-
-    # Apply kernel to image
-    # blurred = cv2.GaussianBlur(large_plate, (5, 5), 0)
-    blurred = _convolution(large_plate, _gaussian_kernel(3, sigma))
-    sharpened_image = cv2.filter2D(blurred, -1, kernel)
-    img1 = get_threshold(sharpened_image)
-
-    cv2.imshow("Blurred_image", img1)
-    # cv2.imshow("sharpened plate", sharpened_image)
 
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
+    return crop_img
 
-_license_plate_detector(gray, 1)
+
+# This will return the plate porsion of the image
+crop_img = _license_plate_detector(gray, 1)
+
+
+#-------------------------------------------------------------------------------------------------
+# Rayhane Part
+#-------------------------------------------------------------------------------------------------
+
+# Crop the image so that when we contour, we don't get unnesessary marks
+# print("Crop_img (width): ", crop_img.shape[0])
+# print("Crop_img (height): ", crop_img.shape[1])
+# print("Crop_img all data: ", crop_img.shape)
+crop_img = crop_img[3:crop_img.shape[0], 3:crop_img.shape[1]]
+
+# Grayscale the Image
+gray = cv2.cvtColor(crop_img, cv2.COLOR_BGR2GRAY)
+cv2.imshow('Gray Shit', gray)
+cv2.waitKey(0)
+
+# find the canny edges
+edged = cv2.Canny(gray, 30, 200)
+cv2.imshow("Canny Edges", edged)
+cv2.waitKey(0)
+# find all the Contours and draw them
+contours, hierarchy = cv2.findContours(edged, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+cv2.imshow('canny edges after contouring', edged)
+cv2.waitKey(0)
+
+# Copy the Image
+contour_image = crop_img.copy()
+# Draw al the contours
+cv2.drawContours(contour_image, contours, -1, (0, 255, 0), 2)
+cv2.imshow('contours', contour_image)
+cv2.waitKey(0)
+
+# Now I need to extract each value of the contour
+i = 0
+for contour in contours:
+
+    x, y, w, h = cv2.boundingRect(contour)
+    cv2.imwrite(str(i)+".jpg", crop_img[y:y+h, x:x+w])
+    i = i + 1
+
+# print("It got here no bugs")
