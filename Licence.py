@@ -20,7 +20,7 @@ import pytesseract
 #plate 1 cropping only works when resized
 #plate 8 works but the edges are very faded
 
-file = 'Images/plate4.jpg'
+file = 'Images/plate8.jpg'
 
 img = cv2.imread(file)
 img = cv2.resize(img, (620, 480))
@@ -189,6 +189,14 @@ plate_img_refined = resize_img(plate_img, scale)
 cv2.imshow('Plate_img_refined', plate_img_refined)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
+
+# Resharpen the image
+gaussian_3 = cv2.GaussianBlur(plate_img_refined, (9, 9), 10.0)
+plate_img_refined = cv2.addWeighted(plate_img_refined, 1.5, gaussian_3, -0.5, 0, plate_img_refined)
+
+cv2.imshow('New filtered Image', plate_img_refined)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
 # apply the OCR library to read the characters of the plate
 text = pytesseract.image_to_string(plate_img_refined)
 # For testing purposes
@@ -200,6 +208,9 @@ digits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 letters = [chr(ord('A') + i) for i in range(25, -1, -1)]
 print("This is the letters: ", letters)
 print("These are the digits: ", digits)
+
+print("This is the text: ", text)
+
 # Create an empty string
 license_plate = ''
 for i in(text):
