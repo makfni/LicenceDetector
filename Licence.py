@@ -20,7 +20,7 @@ import pytesseract
 #plate 1 cropping only works when resized
 #plate 8 works but the edges are very faded
 
-file = 'Images/plate3.jpg'
+file = 'Images/plate4.jpg'
 
 img = cv2.imread(file)
 img = cv2.resize(img, (620, 480))
@@ -72,6 +72,14 @@ kernel_x = np.array([[1, 0, -1],
                      [2, 0, -2],
                      [1, 0, -1]], dtype="float32")
 
+# This function is used to take the small image
+# Of the plate alone and resize it bigger so that one
+# Can read the characters of the image
+def resize_img(img, scale):
+
+    # Resize the image according to the scale
+    new_img = cv2.resize(img, (int(img.shape[1] * scale), int(img.shape[0] * scale)))
+    return new_img
 
 def get_threshold(img):
     return cv2.threshold(img.astype(np.uint8), 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
@@ -138,9 +146,9 @@ def _license_plate_detector(img0, sigma):
         print(pt)
         # cv2.circle(img, pt, 5, (200, 0, 0), 2)
 
-    cv2.imshow('License Plate', img)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    # cv2.imshow('License Plate', img)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
 
     # Sahil's part: extract license plate from image:
     # Obtain coordinates of plate:
@@ -158,13 +166,13 @@ def _license_plate_detector(img0, sigma):
 
     # get crop image
     crop_img = img[topLeft_y:topLeft_y + plate_height, bottomLeft_x:bottomLeft_x + plate_width]
-    cv2.imshow("Cropped License Plate", crop_img)
+    # cv2.imshow("Cropped License Plate", crop_img)
 #     small_img = cv2.resize(char_img,(10,10))
 
     # crop_img = cv2.resize(crop_img, (108, 21))
     # gray_scale_crop_img = cv2.cvtColor(crop_img, cv2.COLOR_BGR2GRAY)
-    cv2.imwrite("license_plate.jpg", crop_img)
-    cv2.imshow("sharpened plate", crop_img)
+    # cv2.imwrite("license_plate.jpg", crop_img)
+    # cv2.imshow("sharpened plate", crop_img)
 
 
     cv2.waitKey(0)
@@ -174,8 +182,30 @@ def _license_plate_detector(img0, sigma):
 
 
 # This will return the plate porsion of the image
-crop_img = _license_plate_detector(gray, 1)
-crop_img = cv2.resize(crop_img, (int(crop_img.shape[1]*1.5), int(crop_img.shape[0]*1.5)))
-cv2.imwrite('new_licence.jpg', crop_img)
-text = pytesseract.image_to_string(crop_img)
-print(text)
+plate_img = _license_plate_detector(gray, 1)
+# plate_img_refined = cv2.resize(plate_img, (int(plate_img.shape[1]*1.5), int(plate_img.shape[0]*1.5)))
+scale = 1.5
+plate_img_refined = resize_img(plate_img, scale)
+cv2.imshow('Plate_img_refined', plate_img_refined)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+# apply the OCR library to read the characters of the plate
+text = pytesseract.image_to_string(plate_img_refined)
+# For testing purposes
+# the digits represent all ten numbers that the plate may have
+digits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+# letters contains all the capital letters that the plate may contain
+# Main purpose is to remove all unecessary characters that the OCR
+# May pick up
+letters = [chr(ord('A') + i) for i in range(25, -1, -1)]
+print("This is the letters: ", letters)
+print("These are the digits: ", digits)
+# Create an empty string
+license_plate = ''
+for i in(text):
+    # Only pick up the characters or digits
+    if (i in digits) or (i in letters):
+        license_plate = license_plate + i
+    else:
+        license_plate = license_plate + ' '
+print(license_plate)
