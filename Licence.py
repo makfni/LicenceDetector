@@ -9,6 +9,8 @@ import cv2
 import scipy.stats as st
 from numpy.core._multiarray_umath import ndarray
 from skimage.exposure import rescale_intensity
+import os
+import pytesseract
 
 # Nick's part: Apply thresholding to find the contours of the image
 #once the contours are found, return the extreme
@@ -18,7 +20,7 @@ from skimage.exposure import rescale_intensity
 #plate 1 cropping only works when resized
 #plate 8 works but the edges are very faded
 
-file = 'Images/plate0.jpg'
+file = 'Images/plate3.jpg'
 
 img = cv2.imread(file)
 img = cv2.resize(img, (620, 480))
@@ -157,7 +159,9 @@ def _license_plate_detector(img0, sigma):
     # get crop image
     crop_img = img[topLeft_y:topLeft_y + plate_height, bottomLeft_x:bottomLeft_x + plate_width]
     cv2.imshow("Cropped License Plate", crop_img)
+#     small_img = cv2.resize(char_img,(10,10))
 
+    # crop_img = cv2.resize(crop_img, (108, 21))
     # gray_scale_crop_img = cv2.cvtColor(crop_img, cv2.COLOR_BGR2GRAY)
     cv2.imwrite("license_plate.jpg", crop_img)
     cv2.imshow("sharpened plate", crop_img)
@@ -171,45 +175,7 @@ def _license_plate_detector(img0, sigma):
 
 # This will return the plate porsion of the image
 crop_img = _license_plate_detector(gray, 1)
-
-
-#-------------------------------------------------------------------------------------------------
-# Rayhane Part
-#-------------------------------------------------------------------------------------------------
-
-# Crop the image so that when we contour, we don't get unnesessary marks
-# print("Crop_img (width): ", crop_img.shape[0])
-# print("Crop_img (height): ", crop_img.shape[1])
-# print("Crop_img all data: ", crop_img.shape)
-crop_img = crop_img[3:crop_img.shape[0], 3:crop_img.shape[1]]
-
-# Grayscale the Image
-gray = cv2.cvtColor(crop_img, cv2.COLOR_BGR2GRAY)
-cv2.imshow('Gray Shit', gray)
-cv2.waitKey(0)
-
-# find the canny edges
-edged = cv2.Canny(gray, 30, 200)
-cv2.imshow("Canny Edges", edged)
-cv2.waitKey(0)
-# find all the Contours and draw them
-contours, hierarchy = cv2.findContours(edged, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-cv2.imshow('canny edges after contouring', edged)
-cv2.waitKey(0)
-
-# Copy the Image
-contour_image = crop_img.copy()
-# Draw al the contours
-cv2.drawContours(contour_image, contours, -1, (0, 255, 0), 2)
-cv2.imshow('contours', contour_image)
-cv2.waitKey(0)
-
-# Now I need to extract each value of the contour
-i = 0
-for contour in contours:
-
-    x, y, w, h = cv2.boundingRect(contour)
-    cv2.imwrite(str(i)+".jpg", crop_img[y:y+h, x:x+w])
-    i = i + 1
-
-# print("It got here no bugs")
+crop_img = cv2.resize(crop_img, (int(crop_img.shape[1]*1.5), int(crop_img.shape[0]*1.5)))
+cv2.imwrite('new_licence.jpg', crop_img)
+text = pytesseract.image_to_string(crop_img)
+print(text)
