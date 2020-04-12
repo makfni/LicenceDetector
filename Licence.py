@@ -21,7 +21,9 @@ from scipy import misc
 #plate 1 cropping only works when resized
 #plate 8 works but the edges are very faded
 
-file = 'Images/plate2.jpg'
+file = 'Images/plate4.jpg'
+
+resize = ["Image/plate1.jpg", "Image/plate7.jpg"]
 
 img = cv2.imread(file)
 print("THis is the shape: ", img.shape)
@@ -154,28 +156,39 @@ def _license_plate_detector(img0, sigma):
 
     # Sahil's part: extract license plate from image:
     # Obtain coordinates of plate:
-    topLeft_y = int(vtx[1][0])
-    topLeft_x = int(vtx[1][1])
+    
+    # [y, x]
+    minX = 10000
+    minY = 10000
+    for v in vtx:
+        if v[1] < minX:
+            minX = v[1]
 
-    print("This is the topLeft_x: ", topLeft_x)
-    print("This is the topLeft_y: ", topLeft_y)
+        if v[0] < minY:
+            minY = v[0]
+    
+    maxX = 0
+    maxY = 0
+    for v in vtx:
+        if v[1] > maxX:
+            maxX = v[1]
 
-    bottomLeft_y = int(vtx[0][0])
-    bottomLeft_x = int(vtx[0][1])
-    print("This is the bottomLeft_x: ", bottomLeft_x)
-    print("This is the bottomLeft_y: ", bottomLeft_y)
-
-
-    topRight_y = int(vtx[2][0])
-    topRight_x = int(vtx[2][1])
-    print("This is the topRight_x: ", topRight_x)
-
-    # get width and height
-    plate_height = bottomLeft_y - topLeft_y
-    plate_width = topRight_x - topLeft_x
+        if v[0] > maxY:
+            maxY = v[0]
+        
+    minX = int(minX)
+    minY = int(minY)
+    maxX = int(maxX)
+    maxY = int(maxY)
+    coords = {
+        "top_left": [minX, minY],
+        "bottom_left": [maxX, minY],
+        "top_right": [minX, maxY],
+        "bottom_right": [maxX, maxY]
+    }
 
     # get crop image
-    crop_img = img[topRight_x:topLeft_x, topLeft_y:bottomLeft_y]
+    crop_img = img[coords["top_left"][0]:coords["bottom_left"][0], coords["bottom_left"][1]:coords["bottom_right"][1]]
     cv2.imshow("Cropped License Plate", crop_img)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
@@ -186,6 +199,9 @@ def _license_plate_detector(img0, sigma):
     # cv2.imwrite("license_plate.jpg", crop_img)
     # cv2.imshow("sharpened plate", crop_img)
 
+    # final_img = get_threshold(crop_img)
+    # final_img = cv2.resize(crop_img,(0,0),fx=3,fy=3)
+    # final_img = cv2.GaussianBlur(crop_img,(5,5),0)
 
     cv2.waitKey(0)
     cv2.destroyAllWindows()
