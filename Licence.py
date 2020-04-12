@@ -11,6 +11,7 @@ from numpy.core._multiarray_umath import ndarray
 from skimage.exposure import rescale_intensity
 import os
 import pytesseract
+from scipy import misc
 
 # Nick's part: Apply thresholding to find the contours of the image
 #once the contours are found, return the extreme
@@ -20,13 +21,14 @@ import pytesseract
 #plate 1 cropping only works when resized
 #plate 8 works but the edges are very faded
 
-file = 'Images/plate8.jpg'
+file = 'Images/plate2.jpg'
 
 img = cv2.imread(file)
-img = cv2.resize(img, (620, 480))
+print("THis is the shape: ", img.shape)
+# img = cv2.resize(img, (620, 480))
 
 gray = cv2.imread(file, 0)
-gray = cv2.resize(gray, (620, 480))
+# gray = cv2.resize(gray, (620, 480))
 
 # Blur to reduce noise while preserving edges
 gray = cv2.bilateralFilter(gray, 11, 17, 17)
@@ -102,8 +104,8 @@ def _license_plate_detector(img0, sigma):
     # cv2.imshow('Threshold', thresh)
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
-
     # Find contours based on the threshold
+
     # 2nd parametre is returns contours without caring about hierarchical relationships
     # 3rd parametre spepcifies how the the contour is shown (leaves only end points)
     contours = cv2.findContours(thresh.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
@@ -144,29 +146,39 @@ def _license_plate_detector(img0, sigma):
     for p in vtx:
         pt = (p[0], p[1])
         print(pt)
-        # cv2.circle(img, pt, 5, (200, 0, 0), 2)
+        cv2.circle(img, pt, 5, (200, 0, 0), 2)
 
-    # cv2.imshow('License Plate', img)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
+    cv2.imshow('License Plate', img)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
 
     # Sahil's part: extract license plate from image:
     # Obtain coordinates of plate:
-    topLeft_x = int(vtx[1][0])
-    topLeft_y = int(vtx[1][1])
+    topLeft_y = int(vtx[1][0])
+    topLeft_x = int(vtx[1][1])
 
-    bottomLeft_x = int(vtx[0][0])
-    bottomLeft_y = int(vtx[0][1])
+    print("This is the topLeft_x: ", topLeft_x)
+    print("This is the topLeft_y: ", topLeft_y)
 
-    topRight_x = int(vtx[2][0])
+    bottomLeft_y = int(vtx[0][0])
+    bottomLeft_x = int(vtx[0][1])
+    print("This is the bottomLeft_x: ", bottomLeft_x)
+    print("This is the bottomLeft_y: ", bottomLeft_y)
+
+
+    topRight_y = int(vtx[2][0])
+    topRight_x = int(vtx[2][1])
+    print("This is the topRight_x: ", topRight_x)
 
     # get width and height
     plate_height = bottomLeft_y - topLeft_y
     plate_width = topRight_x - topLeft_x
 
     # get crop image
-    crop_img = img[topLeft_y:topLeft_y + plate_height, bottomLeft_x:bottomLeft_x + plate_width]
-    # cv2.imshow("Cropped License Plate", crop_img)
+    crop_img = img[topRight_x:topLeft_x, topLeft_y:bottomLeft_y]
+    cv2.imshow("Cropped License Plate", crop_img)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
 #     small_img = cv2.resize(char_img,(10,10))
 
     # crop_img = cv2.resize(crop_img, (108, 21))
@@ -194,11 +206,17 @@ cv2.destroyAllWindows()
 gaussian_3 = cv2.GaussianBlur(plate_img_refined, (9, 9), 10.0)
 plate_img_refined = cv2.addWeighted(plate_img_refined, 1.5, gaussian_3, -0.5, 0, plate_img_refined)
 
+
 cv2.imshow('New filtered Image', plate_img_refined)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
+
+
+cv2.imwrite('FINALE.jpg', plate_img_refined)
+
 # apply the OCR library to read the characters of the plate
 text = pytesseract.image_to_string(plate_img_refined)
+print("Original text: ", text)
 # For testing purposes
 # the digits represent all ten numbers that the plate may have
 digits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
