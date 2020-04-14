@@ -12,7 +12,7 @@ from skimage.exposure import rescale_intensity
 import os
 import pytesseract
 from scipy import misc
-
+import sys
 # Nick's part: Apply thresholding to find the contours of the image
 #once the contours are found, return the extreme
 #points ((x,y) coordinates of the contour edges)
@@ -21,7 +21,9 @@ from scipy import misc
 #plate 1 cropping only works when resized
 #plate 8 works but the edges are very faded
 
-file = 'Images/plate4.jpg'
+file = 'Images/plate7.jpg'
+scale = float(sys.argv[1])
+print(scale)
 
 resize = ["Image/plate1.jpg", "Image/plate7.jpg"]
 
@@ -84,6 +86,20 @@ def resize_img(img, scale):
     # Resize the image according to the scale
     new_img = cv2.resize(img, (int(img.shape[1] * scale), int(img.shape[0] * scale)))
     return new_img
+
+def clean_text(img, digits, letters):
+    # Create an empty string
+    license_plate = ''
+    for i in(text):
+        # Only pick up the characters or digits
+        if (i in digits) or (i in letters):
+            license_plate = license_plate + i
+        # unecessary characters that the ocr picked up randomly
+        # ignore them
+        else:
+            license_plate = license_plate + ' '
+    # return the correct text
+    return license_plate
 
 def get_threshold(img):
     return cv2.threshold(img.astype(np.uint8), 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
@@ -155,8 +171,7 @@ def _license_plate_detector(img0, sigma):
     cv2.destroyAllWindows()
 
     # Sahil's part: extract license plate from image:
-    # Obtain coordinates of plate:
-    
+    # Obtain coordinates of plate and crop the image:
     # [y, x]
     minX = 10000
     minY = 10000
@@ -166,7 +181,7 @@ def _license_plate_detector(img0, sigma):
 
         if v[0] < minY:
             minY = v[0]
-    
+
     maxX = 0
     maxY = 0
     for v in vtx:
@@ -175,7 +190,7 @@ def _license_plate_detector(img0, sigma):
 
         if v[0] > maxY:
             maxY = v[0]
-        
+
     minX = int(minX)
     minY = int(minY)
     maxX = int(maxX)
@@ -212,7 +227,7 @@ def _license_plate_detector(img0, sigma):
 # This will return the plate porsion of the image
 plate_img = _license_plate_detector(gray, 1)
 # plate_img_refined = cv2.resize(plate_img, (int(plate_img.shape[1]*1.5), int(plate_img.shape[0]*1.5)))
-scale = 1.5
+# scale = 2.5
 plate_img_refined = resize_img(plate_img, scale)
 cv2.imshow('Plate_img_refined', plate_img_refined)
 cv2.waitKey(0)
@@ -240,17 +255,9 @@ digits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 # Main purpose is to remove all unecessary characters that the OCR
 # May pick up
 letters = [chr(ord('A') + i) for i in range(25, -1, -1)]
-print("This is the letters: ", letters)
-print("These are the digits: ", digits)
+print("This is the available letters: ", letters)
+print("These are the available digits: ", digits)
 
-print("This is the text: ", text)
-
-# Create an empty string
-license_plate = ''
-for i in(text):
-    # Only pick up the characters or digits
-    if (i in digits) or (i in letters):
-        license_plate = license_plate + i
-    else:
-        license_plate = license_plate + ' '
-print(license_plate)
+# print("This is the text: ", text)
+license_plate_text = clean_text(text, digits, letters)
+print("The license plate text: ", license_plate_text)
