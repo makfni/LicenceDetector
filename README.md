@@ -7,6 +7,7 @@
   
 # Comple
   scale = floating point multiplier
+
   file = image source
 
   Ex:
@@ -15,3 +16,10 @@
   Output:
   licence plate information
 
+# Video
+  Code execution found here
+  
+  https://youtu.be/-iKF2cxs-JI
+
+# Note
+  Code implemented with a way the scale is important for the output
