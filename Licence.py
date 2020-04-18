@@ -259,6 +259,10 @@ def _license_extraction(vtx, img):
     # get crop image
     crop_img = img[coords["top_left"][0]:coords["bottom_left"][0], coords["bottom_left"][1]:coords["bottom_right"][1]]
 
+    cv2.imshow('Cropped License Plate', crop_img)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
     return crop_img
 
 
