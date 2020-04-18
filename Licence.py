@@ -44,19 +44,6 @@ def get_scale():
     scale = float(sys.argv[1])
     return scale
 
-# Get the path from the user
-file = image_path()
-
-img = cv2.imread(file)
-# img = cv2.resize(img, (620, 480))
-
-gray = cv2.imread(file, 0)
-# gray = cv2.resize(gray, (620, 480))
-
-# Blur to reduce noise while preserving edges
-gray = cv2.bilateralFilter(gray, 11, 17, 17)
-
-
 # Convolution applies the kernel to the image to produce a new image
 def _convolution(img0, ker):
     (imgH, imgW) = img0.shape[:2]
@@ -148,7 +135,7 @@ def gen_information():
 
     return digits, letters
 
-def _license_plate_detector(img0, sigma):
+def _license_plate_detector(img0, img, sigma):
     gaussian = _convolution(img0, _gaussian_kernel(3, sigma))
 
     # Pass gaussian filter into threshold built-in func
@@ -224,11 +211,11 @@ def _license_plate_detector(img0, sigma):
     cv2.destroyAllWindows()
 
     # License Plate Extraction
-    crop_img = _license_extraction(vtx)
+    crop_img = _license_extraction(vtx, img)
 
     return crop_img
 
-def _license_extraction(vtx):
+def _license_extraction(vtx, img):
     # Sahil's part: extract license plate from image:
     # Obtain coordinates of plate and crop the image:
     minX = 10000
@@ -333,7 +320,7 @@ def main():
     gray = cv2.bilateralFilter(gray, 11, 17, 17)
 
     # This will return the plate porsion of the image
-    plate_img = _license_plate_detector(gray, 1)
+    plate_img = _license_plate_detector(gray, img, 1)
 
     # Character recognistion part
     character_recognistion(plate_img)
