@@ -21,14 +21,33 @@ import sys
 #plate 1 cropping only works when resized
 #plate 8 works but the edges are very faded
 
-file = 'Images/plate1.jpg'
-scale = float(sys.argv[1])
-print(scale)
 
-resize = ["Image/plate1.jpg", "Image/plate7.jpg"]
+
+
+
+
+# return the path of the image
+def image_path():
+    # Get the image name from the argument
+    image_arg = str(sys.argv[2])
+    # Get the initail path of the image
+    path = 'Images/'
+    # Add the full path
+    path = path + image_arg
+
+    return path
+    
+
+# Scale::For the resize of the license plate
+def get_scale():
+    # The scale is argument 1
+    scale = float(sys.argv[1])
+    return scale
+
+# Get the path from the user
+file = image_path()
 
 img = cv2.imread(file)
-print("THis is the shape: ", img.shape)
 # img = cv2.resize(img, (620, 480))
 
 gray = cv2.imread(file, 0)
@@ -87,7 +106,7 @@ def resize_img(img, scale):
     new_img = cv2.resize(img, (int(img.shape[1] * scale), int(img.shape[0] * scale)))
     return new_img
 
-def clean_text(img, digits, letters):
+def test_text(text, digits, letters):
     # Create an empty string
     license_plate = ''
     for i in(text):
@@ -104,6 +123,30 @@ def clean_text(img, digits, letters):
 def get_threshold(img):
     return cv2.threshold(img.astype(np.uint8), 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
 
+
+def sharpen_image(plate_img_refined):
+    # Blur then filter
+    gaussian_3 = cv2.GaussianBlur(plate_img_refined, (9, 9), 10.0)
+    plate_img_refined = cv2.addWeighted(plate_img_refined, 1.5, gaussian_3, -0.5, 0, plate_img_refined)
+
+
+    return plate_img_refined
+
+def gen_information():
+
+    # Create two empty arrays to hold the data for both the letters and the character
+    digits = []
+    letters = []
+
+    # Get the valid numbers of a plate ie 0-9
+    for digit in range(10):
+        digits.append(chr(ord('1')+digit))
+
+    # Get all the character of a plate A-Z
+    for letter in range(25, -1, -1):
+        letters.append(chr(ord('A')+letter))
+
+    return digits, letters
 
 def _license_plate_detector(img0, sigma):
     gaussian = _convolution(img0, _gaussian_kernel(3, sigma))
@@ -159,12 +202,22 @@ def _license_plate_detector(img0, sigma):
 
     # based on the contour that was found, we return
     # the 4 extreme point (vertex) coordinates (x,y)
+
+    # Print all the contour points
+    print("\n\n")
+    print("-----------------------------------Contour Points-----------------------------------")
+
     rec = cv2.minAreaRect(LPCnt)
     vtx = cv2.boxPoints(rec)
+    counter = 1
     for p in vtx:
         pt = (p[0], p[1])
-        print(pt)
+        print("Contour point", counter, ":",  pt)
         cv2.circle(img, pt, 5, (200, 0, 0), 2)
+        counter = counter + 1
+
+    print("-----------------------------------------------------------------------------------")
+
 
     cv2.imshow('License Plate', img)
     cv2.waitKey(0)
@@ -212,40 +265,81 @@ def _license_extraction(vtx):
 
     return crop_img
 
-# This will return the plate porsion of the image
-plate_img = _license_plate_detector(gray, 1)
-# plate_img_refined = cv2.resize(plate_img, (int(plate_img.shape[1]*1.5), int(plate_img.shape[0]*1.5)))
-# scale = 2.5
-plate_img_refined = resize_img(plate_img, scale)
-cv2.imshow('Plate_img_refined', plate_img_refined)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
 
-# Resharpen the image
-gaussian_3 = cv2.GaussianBlur(plate_img_refined, (9, 9), 10.0)
-plate_img_refined = cv2.addWeighted(plate_img_refined, 1.5, gaussian_3, -0.5, 0, plate_img_refined)
+# Rayhane Part 
+# take in the license plate image
+# Resize it with a specific scale
+# Sharpen the scaled image
+# Apply the character recognisiton
+# Test the character recognisition
+# Return the characters to the user
+def character_recognistion(cropped_image):
+
+    # Get the scale from the user
+    scale = get_scale()
+
+    # Resize the image with the scale
+    resized_cropped_image = resize_img(cropped_image, scale)
+
+    # Display it to the user
+    cv2.imshow("Resized Cropped Image", resized_cropped_image)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+    # Sharpen the image
+    sharpened_image = sharpen_image(resized_cropped_image)
+
+    # Display the sharpened image to the user
+    cv2.imshow("Sharepend resized image", sharpened_image)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+    # Get the letters and digits
+    digits, letters = gen_information()
 
 
-cv2.imshow('New filtered Image', plate_img_refined)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
+    print("\n\n\n")
+    print("----------------------------------Testing purpose-----------------------------------")
+    print("digits:", digits)
+    print("letters:", letters)
+    print("------------------------------------------------------------------------------------")
+
+    # Apply the OCR library to read the characters of the plate
+    text = pytesseract.image_to_string(sharpened_image)
+
+    # Get the text with the testing
+    tested_text = test_text(text, digits, letters)
+
+    # Display the original text to the user
+    print("\n\n\n")
+    print("-------------------------------Character Recognistion-------------------------------")
+    print("Text without testing:   ", text)
+    print("\n")
+    print("Text with testing:      ", tested_text)
+    print("------------------------------------------------------------------------------------")
 
 
-cv2.imwrite('FINALE.jpg', plate_img_refined)
+# Main function
+def main():
 
-# apply the OCR library to read the characters of the plate
-text = pytesseract.image_to_string(plate_img_refined)
-print("Original text: ", text)
-# For testing purposes
-# the digits represent all ten numbers that the plate may have
-digits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
-# letters contains all the capital letters that the plate may contain
-# Main purpose is to remove all unecessary characters that the OCR
-# May pick up
-letters = [chr(ord('A') + i) for i in range(25, -1, -1)]
-print("This is the available letters: ", letters)
-print("These are the available digits: ", digits)
+    # Get the path from the user
+    file = image_path()
 
-# print("This is the text: ", text)
-license_plate_text = clean_text(text, digits, letters)
-print("The license plate text: ", license_plate_text)
+    # Open the image with color, and open it in grayscale
+    img = cv2.imread(file)
+    gray = cv2.imread(file, 0)
+
+    # Blur to reduce noise while preserving edges
+    gray = cv2.bilateralFilter(gray, 11, 17, 17)
+
+    # This will return the plate porsion of the image
+    plate_img = _license_plate_detector(gray, 1)
+
+    # Character recognistion part
+    character_recognistion(plate_img)
+
+
+
+
+# Call the main
+main()
