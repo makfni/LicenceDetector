@@ -39,8 +39,8 @@ def image_path():
 # Scale::For the resize of the license plate
 def get_scale():
     # The scale is argument 1
-    # scale = float(sys.argv[1])
-    scale = 1.5
+    scale = float(sys.argv[1])
+
     return scale
 
 
@@ -320,8 +320,8 @@ def character_recognition(cropped_image):
 # Main function
 def main():
     # Get the path from the user
-    # file = image_path()
-    file = 'Images/plate1.jpg'
+    file = image_path()
+
     # Open the image with color, and open it in grayscale
     img = cv2.imread(file)
     gray = cv2.imread(file, 0)
