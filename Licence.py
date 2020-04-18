@@ -21,7 +21,7 @@ import sys
 #plate 1 cropping only works when resized
 #plate 8 works but the edges are very faded
 
-file = 'Images/plate7.jpg'
+file = 'Images/plate1.jpg'
 scale = float(sys.argv[1])
 print(scale)
 
@@ -170,9 +170,14 @@ def _license_plate_detector(img0, sigma):
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
+    # License Plate Extraction
+    crop_img = _license_extraction(vtx)
+
+    return crop_img
+
+def _license_extraction(vtx):
     # Sahil's part: extract license plate from image:
     # Obtain coordinates of plate and crop the image:
-    # [y, x]
     minX = 10000
     minY = 10000
     for v in vtx:
@@ -204,25 +209,8 @@ def _license_plate_detector(img0, sigma):
 
     # get crop image
     crop_img = img[coords["top_left"][0]:coords["bottom_left"][0], coords["bottom_left"][1]:coords["bottom_right"][1]]
-    cv2.imshow("Cropped License Plate", crop_img)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-#     small_img = cv2.resize(char_img,(10,10))
-
-    # crop_img = cv2.resize(crop_img, (108, 21))
-    # gray_scale_crop_img = cv2.cvtColor(crop_img, cv2.COLOR_BGR2GRAY)
-    # cv2.imwrite("license_plate.jpg", crop_img)
-    # cv2.imshow("sharpened plate", crop_img)
-
-    # final_img = get_threshold(crop_img)
-    # final_img = cv2.resize(crop_img,(0,0),fx=3,fy=3)
-    # final_img = cv2.GaussianBlur(crop_img,(5,5),0)
-
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
 
     return crop_img
-
 
 # This will return the plate porsion of the image
 plate_img = _license_plate_detector(gray, 1)
