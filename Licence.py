@@ -13,17 +13,15 @@ import os
 import pytesseract
 from scipy import misc
 import sys
-# Nick's part: Apply thresholding to find the contours of the image
-#once the contours are found, return the extreme
-#points ((x,y) coordinates of the contour edges)
-
-#license plate cropping doesn't work for: 2, 7, 9, and 10
-#plate 1 cropping only works when resized
-#plate 8 works but the edges are very faded
 
 
+# Nick's part: Apply threshold to find the contours of the image
+# once the contours are found, return the extreme
+# points ((x,y) coordinates of the contour edges)
 
-
+# license plate cropping doesn't work for: 2, 7, 9, and 10
+# plate 1 cropping only works when resized
+# plate 8 works but the edges are very faded
 
 
 # return the path of the image
@@ -36,13 +34,15 @@ def image_path():
     path = path + image_arg
 
     return path
-    
+
 
 # Scale::For the resize of the license plate
 def get_scale():
     # The scale is argument 1
-    scale = float(sys.argv[1])
+    # scale = float(sys.argv[1])
+    scale = 1.5
     return scale
+
 
 # Convolution applies the kernel to the image to produce a new image
 def _convolution(img0, ker):
@@ -84,19 +84,20 @@ kernel_x = np.array([[1, 0, -1],
                      [2, 0, -2],
                      [1, 0, -1]], dtype="float32")
 
+
 # This function is used to take the small image
 # Of the plate alone and resize it bigger so that one
 # Can read the characters of the image
 def resize_img(img, scale):
-
     # Resize the image according to the scale
     new_img = cv2.resize(img, (int(img.shape[1] * scale), int(img.shape[0] * scale)))
     return new_img
 
+
 def test_text(text, digits, letters):
     # Create an empty string
     license_plate = ''
-    for i in(text):
+    for i in text:
         # Only pick up the characters or digits
         if (i in digits) or (i in letters):
             license_plate = license_plate + i
@@ -107,6 +108,7 @@ def test_text(text, digits, letters):
     # return the correct text
     return license_plate
 
+
 def get_threshold(img):
     return cv2.threshold(img.astype(np.uint8), 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
 
@@ -116,26 +118,26 @@ def sharpen_image(plate_img_refined):
     gaussian_3 = cv2.GaussianBlur(plate_img_refined, (9, 9), 10.0)
     plate_img_refined = cv2.addWeighted(plate_img_refined, 1.5, gaussian_3, -0.5, 0, plate_img_refined)
 
-
     return plate_img_refined
 
-def gen_information():
 
+def gen_information():
     # Create two empty arrays to hold the data for both the letters and the character
     digits = []
     letters = []
 
     # Get the valid numbers of a plate ie 0-9
     for digit in range(10):
-        digits.append(chr(ord('1')+digit))
+        digits.append(chr(ord('1') + digit))
 
     # Get all the character of a plate A-Z
     for letter in range(25, -1, -1):
-        letters.append(chr(ord('A')+letter))
+        letters.append(chr(ord('A') + letter))
 
     return digits, letters
 
-def _license_plate_detector(img0, img, sigma):
+
+def threshold(img0, img, sigma):
     gaussian = _convolution(img0, _gaussian_kernel(3, sigma))
 
     # Pass gaussian filter into threshold built-in func
@@ -153,7 +155,10 @@ def _license_plate_detector(img0, img, sigma):
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
     # Find contours based on the threshold
+    return thresh
 
+
+def locate_contours(thresh):
     # 2nd parametre is returns contours without caring about hierarchical relationships
     # 3rd parametre spepcifies how the the contour is shown (leaves only end points)
     contours = cv2.findContours(thresh.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
@@ -185,26 +190,29 @@ def _license_plate_detector(img0, img, sigma):
 
     # if detected == 1:
     #     continue
-        # cv2.drawContours(img, [LPCnt], -1, (255, 255, 255), 3)
+    # cv2.drawContours(img, [LPCnt], -1, (255, 255, 255), 3)
 
     # based on the contour that was found, we return
     # the 4 extreme point (vertex) coordinates (x,y)
 
+    return LPCnt
+
+
+def coordinates(contour, img):
     # Print all the contour points
     print("\n\n")
     print("-----------------------------------Contour Points-----------------------------------")
 
-    rec = cv2.minAreaRect(LPCnt)
+    rec = cv2.minAreaRect(contour)
     vtx = cv2.boxPoints(rec)
     counter = 1
     for p in vtx:
         pt = (p[0], p[1])
-        print("Contour point", counter, ":",  pt)
+        print("Contour point", counter, ":", pt)
         cv2.circle(img, pt, 5, (200, 0, 0), 2)
         counter = counter + 1
 
     print("-----------------------------------------------------------------------------------")
-
 
     cv2.imshow('License Plate', img)
     cv2.waitKey(0)
@@ -214,6 +222,7 @@ def _license_plate_detector(img0, img, sigma):
     crop_img = _license_extraction(vtx, img)
 
     return crop_img
+
 
 def _license_extraction(vtx, img):
     # Sahil's part: extract license plate from image:
@@ -260,8 +269,7 @@ def _license_extraction(vtx, img):
 # Apply the character recognisiton
 # Test the character recognisition
 # Return the characters to the user
-def character_recognistion(cropped_image):
-
+def character_recognition(cropped_image):
     # Get the scale from the user
     scale = get_scale()
 
@@ -283,7 +291,6 @@ def character_recognistion(cropped_image):
 
     # Get the letters and digits
     digits, letters = gen_information()
-
 
     print("\n\n\n")
     print("----------------------------------Testing purpose-----------------------------------")
@@ -308,10 +315,9 @@ def character_recognistion(cropped_image):
 
 # Main function
 def main():
-
     # Get the path from the user
-    file = image_path()
-
+    # file = image_path()
+    file = 'Images/plate1.jpg'
     # Open the image with color, and open it in grayscale
     img = cv2.imread(file)
     gray = cv2.imread(file, 0)
@@ -319,13 +325,13 @@ def main():
     # Blur to reduce noise while preserving edges
     gray = cv2.bilateralFilter(gray, 11, 17, 17)
 
-    # This will return the plate porsion of the image
-    plate_img = _license_plate_detector(gray, img, 1)
+    contours = locate_contours(threshold(gray, img, 1))
 
-    # Character recognistion part
-    character_recognistion(plate_img)
+    # This will return the plate portion of the image
+    plate_img = coordinates(contours, img)
 
-
+    # Character recognition part
+    character_recognition(plate_img)
 
 
 # Call the main
