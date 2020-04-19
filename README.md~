@@ -4,8 +4,7 @@
 
 # How To Use It?
   Make sure you have the python pytesseract, imutils, numpy, cv2, scipy, skimage, os, and sys installed.
-
-  Assistance on installing pytesseract: https://www.youtube.com/watch?v=4DrCIVS5U3Y 
+  
 # Comple
   scale = floating point multiplier
 
